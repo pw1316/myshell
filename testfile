@@ -1,0 +1,3 @@
+dir /home/joker/myshell
+echo Hello World!
+environ
