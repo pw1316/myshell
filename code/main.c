@@ -1,5 +1,6 @@
-/*
- *
+/* MyShell main file
+ * This is the main processing function of MyShell.
+ * Last Update: 2016.8.25 by Joker Yough
  */
 #include <dirent.h>
 #include <fcntl.h>
@@ -36,10 +37,10 @@ int main(int argc, char *argv[])
 	struct stat statbuf;/*stat*/
 	int shouldrun = 1; /* flag to determine when to exit program */
 	
-	if(argv[0][0]=='.'){
-		getcwd(shell,256);
-		p=argv[0]+1;
-		strcat(shell,p);
+	if(argv[0][0] == '.'){
+		getcwd(shell, 256);
+		p = argv[0] + 1;
+		strcat(shell, p);
 	}
 	else{
 		strcpy(shell,argv[0]);
