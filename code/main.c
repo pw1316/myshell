@@ -1,20 +1,26 @@
+#include <dirent.h>
+#include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <fcntl.h>
-#include <dirent.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-#define MAXLINE 80 /* The maximum length command */
+
+/* The maximum length command */
+#define MAXLEN 80
 
 char pwd[256]="/";
 char shell[256]="";
 
-int main(int argc,char* argv[]){
-	char *cmdarg[MAXLINE/2 + 1]; /* command line arguments */
-	char cmd[MAXLINE];/* store command */
-	char readme[MAXLINE];/*readme path*/
+int main(int argc, char *argv[])
+{
+	/* command line arguments */
+	char *cmdarg[MAXLEN / 2 + 1];
+	/* store command */
+	char cmd[MAXLEN];
+	/*readme path*/
+	char readme[MAXLEN];
 	char *p;
 	int rf,i,j,pid,fd,fd2,bg,child;
 	/*rf:reading commands*/
@@ -45,8 +51,8 @@ int main(int argc,char* argv[]){
 		fflush(stdout);
 
 		/*read a cmd*/
-		memset(cmd,0,MAXLINE);
-		rf=read(0,cmd,MAXLINE);
+		memset(cmd,0,MAXLEN);
+		rf=read(0,cmd,MAXLEN);
 		cmd[strlen(cmd)-1]='\0';
 		if(rf<0){
 			perror("can't read!");
