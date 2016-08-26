@@ -12,20 +12,21 @@
 #include <sys/types.h>
 
 /* The maximum length command */
-#define MAXLEN 80
+#define MAX_CMD_LEN 80
+#define MAX_PATH_LEN 256
 
-char pwd[256]="/";
-char shell[256]="";
+char pwd[MAX_PATH_LEN]="";
+char shell[MAX_PATH_LEN]="";
 
 int main(int argc, char *argv[])
 {
     /* command line arguments */
-    char *cmdarg[MAXLEN / 2 + 1];
+    char *cmdarg[MAX_CMD_LEN / 2 + 1];
     /* store command */
-    char cmd[MAXLEN];
+    char cmd[MAX_CMD_LEN];
     /*readme path*/
-    char readme[MAXLEN];
-    char *p;
+    char readme[MAX_CMD_LEN];
+    char *cp;
     int rf,i,j,pid,fd,fd2,bg,child;
     /*rf:reading commands*/
     /*pid: process ID*/
@@ -37,10 +38,18 @@ int main(int argc, char *argv[])
     struct stat statbuf;/*stat*/
     int shouldrun = 1; /* flag to determine when to exit program */
     
+    cp = getcwd(pwd, MAX_PATH_LEN);
+    if(cp == NULL)
+    {
+        printf("PWD too long!\n");
+        return 1;
+    }
+
+    cp = argv[0];
+    while(cp != 0);
     if(argv[0][0] == '.'){
-        getcwd(shell, 256);
-        p = argv[0] + 1;
-        strcat(shell, p);
+        getcwd(shell, MAX_PATH_LEN);
+        strcat(shell, argv[0] + 1);
     }
     else{
         strcpy(shell,argv[0]);
@@ -55,8 +64,8 @@ int main(int argc, char *argv[])
         fflush(stdout);
 
         /*read a cmd*/
-        memset(cmd,0,MAXLEN);
-        rf=read(0,cmd,MAXLEN);
+        memset(cmd,0,MAX_CMD_LEN);
+        rf=read(0,cmd,MAX_CMD_LEN);
         cmd[strlen(cmd)-1]='\0';
         if(rf<0){
             perror("can't read!");
@@ -536,10 +545,10 @@ int main(int argc, char *argv[])
             if(cmdarg[1]){
                 fd=open(cmdarg[1],O_RDONLY);
                 if(fd==-1){printf("open error!\n"); continue;}
-                p=cmd;
-                while(read(fd,p,1)!=0){
-                    if(*p=='\n'){
-                        *p='\0';
+                cp=cmd;
+                while(read(fd,cp,1)!=0){
+                    if(*cp=='\n'){
+                        *cp='\0';
                         pid=fork();
                         if(pid<0) printf("fork error!\n");
                         else if(pid==0){
@@ -547,15 +556,15 @@ int main(int argc, char *argv[])
                             break;
                         }
                         else wait(NULL);
-                        p=cmd;
-                        *p='\0';
+                        cp=cmd;
+                        *cp='\0';
                     }
                     else{
-                        p++;
+                        cp++;
                     }                    
                 }
                 if(cmd[0]){
-                    *p='\0';
+                    *cp='\0';
                     pid=fork();
                     if(pid<0) printf("fork error!\n");
                     else if(pid==0){
