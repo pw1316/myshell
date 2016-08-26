@@ -11,6 +11,8 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
+#include "parse.h"
+
 /* The maximum length command */
 #define MAX_CMD_LEN 80
 #define MAX_PATH_LEN 256
@@ -38,25 +40,17 @@ int main(int argc, char *argv[])
     struct stat statbuf;/*stat*/
     int shouldrun = 1; /* flag to determine when to exit program */
     
-    cp = getcwd(pwd, MAX_PATH_LEN);
-    if(cp == NULL)
+    if(getcwd(pwd, MAX_PATH_LEN) == NULL)
     {
         printf("PWD too long!\n");
         return 1;
     }
-
-    cp = argv[0];
-    while(cp != 0);
-    if(argv[0][0] == '.'){
-        getcwd(shell, MAX_PATH_LEN);
-        strcat(shell, argv[0] + 1);
+    if(getAbsolutePath(shell, argv[0], MAX_PATH_LEN) == 1)
+    {
+        printf("SHELL path too long!\n");
+        return 1;
     }
-    else{
-        strcpy(shell,argv[0]);
-    }
-    shell[strlen(shell)-7]='\0';
-    chdir("/");
-    getcwd(pwd,256);
+    
     child=0;
     while (shouldrun) {
         if(!child){
