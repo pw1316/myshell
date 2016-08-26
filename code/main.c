@@ -17,28 +17,27 @@
 #define MAX_CMD_LEN 80
 #define MAX_PATH_LEN 256
 
-char pwd[MAX_PATH_LEN]="";
-char shell[MAX_PATH_LEN]="";
+/*environment*/
+char pwd[MAX_PATH_LEN] = "";
+char shell[MAX_PATH_LEN] = "";
+const char PS1[] = "myshell:%s$ ";
+const char PS2[] = "> ";
 
 int main(int argc, char *argv[])
 {
     /* command line arguments */
     char *cmdarg[MAX_CMD_LEN / 2 + 1];
-    /* store command */
-    char cmd[MAX_CMD_LEN];
     /*readme path*/
     char readme[MAX_CMD_LEN];
     char *cp;
-    int rf,i,j,pid,fd,fd2,bg,child;
+    int i,j,pid,fd,fd2,bg;
     /*rf:reading commands*/
     /*pid: process ID*/
     /*fd: open file*/
     /*bg: background flag(external commands)*/
-    /*child: a command read from a file*/
     DIR* dp;/*dir*/
     struct dirent* subdp;/*dir member*/
     struct stat statbuf;/*stat*/
-    int shouldrun = 1; /* flag to determine when to exit program */
     
     if(getcwd(pwd, MAX_PATH_LEN) == NULL)
     {
@@ -50,27 +49,57 @@ int main(int argc, char *argv[])
         printf("SHELL path too long!\n");
         return 1;
     }
-    
-    child=0;
-    while (shouldrun) {
-        if(!child){
-        printf("[myshell:%s]>",pwd);
-        fflush(stdout);
 
-        /*read a cmd*/
-        memset(cmd,0,MAX_CMD_LEN);
-        rf=read(0,cmd,MAX_CMD_LEN);
-        cmd[strlen(cmd)-1]='\0';
-        if(rf<0){
-            perror("can't read!");
-            continue;
-        }
-        else if(rf==1) continue;
-        }
-        /*read a cmd*/
+    int child = 0;
+    int PS1orPS2 = 1;
+    int bytesRead = 0;
+    char command[MAX_CMD_LEN] = "";
+    while(1)
+    {
+        if(!child)
+        {
+            if(PS1orPS2)
+            {
+                printf(PS1,pwd);
+                fflush(stdout);
+                bytesRead = 0;
+                memset(command, 0, MAX_CMD_LEN);
+                
+                int flag = read(0, command, MAX_CMD_LEN);
+                if(flag <= 1) continue;
+                command[--flag] = '\0';
+                if(command[flag - 1] == '\\')
+                {
+                    bytesRead += flag - 1;
+                    PS1orPS2 = 0;
+                    continue;
+                }
+            }
+            else
+            {
+                printf(PS2);
+                fflush(stdout);
 
+                int flag = read(0, command + bytesRead, MAX_CMD_LEN - bytesRead);
+                if(flag <= 1)
+                {
+                    command[bytesRead] = '\0';
+                    PS1orPS2 = 1;
+                }
+                else
+                {
+                    command[bytesRead + (--flag)] = '\0';
+                    if(command[bytesRead + flag - 1] == '\\')
+                    {
+                        bytesRead += flag - 1;
+                        continue;
+                    }
+                    PS1orPS2 = 1;
+                }
+            }
+        }
         /*get arguments*/
-        cmdarg[0]=strtok(cmd," ");
+        cmdarg[0]=strtok(command," ");
         for(i=1;cmdarg[i]=strtok(NULL," ");i++);
         /*get arguments*/
 
@@ -539,7 +568,7 @@ int main(int argc, char *argv[])
             if(cmdarg[1]){
                 fd=open(cmdarg[1],O_RDONLY);
                 if(fd==-1){printf("open error!\n"); continue;}
-                cp=cmd;
+                cp=command;
                 while(read(fd,cp,1)!=0){
                     if(*cp=='\n'){
                         *cp='\0';
@@ -550,14 +579,14 @@ int main(int argc, char *argv[])
                             break;
                         }
                         else wait(NULL);
-                        cp=cmd;
+                        cp=command;
                         *cp='\0';
                     }
                     else{
                         cp++;
                     }                    
                 }
-                if(cmd[0]){
+                if(command[0]){
                     *cp='\0';
                     pid=fork();
                     if(pid<0) printf("fork error!\n");
@@ -583,8 +612,8 @@ int main(int argc, char *argv[])
                 sprintf(readme,"%s/readme",shell);
                 fd=open(readme,O_RDONLY);
                 if(fd<0){printf("open error!"); continue;}
-                while(read(fd,cmd,1)!=0){
-                    write(1,cmd,1);            
+                while(read(fd,command,1)!=0){
+                    write(1,command,1);            
                 }
                 close(fd);
             }
@@ -597,8 +626,8 @@ int main(int argc, char *argv[])
                     sprintf(readme,"%s/readme",shell);
                     fd2=open(readme,O_RDONLY);
                     if(fd2<0){printf("open error!"); close(fd); continue;}
-                    while(read(fd2,cmd,1)!=0){
-                        write(fd,cmd,1);            
+                    while(read(fd2,command,1)!=0){
+                        write(fd,command,1);            
                     }
                     close(fd2);
                     close(fd);
